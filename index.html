@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wristband Bike Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #111;
+      color: #eee;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: #cc0000;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-weight: 700;
+      font-size: 2rem;
+    }
+
+    .filter-buttons {
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    .filter-buttons button {
+      background-color: #cc0000;
+      border: none;
+      color: white;
+      padding: 10px 18px;
+      margin: 0 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    .filter-buttons button:hover,
+    .filter-buttons button.active {
+      background-color: #e60000;
+    }
+
+    main {
+      flex-grow: 1;
+      padding: 20px;
+      max-width: 1000px;
+      margin: 0 auto 40px;
+    }
+
+    .bike-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .bike-card {
+      background-color: #222;
+      border: 2px solid #cc0000;
+      border-radius: 10px;
+      padding: 15px;
+      transition: transform 0.2s ease;
+    }
+
+    .bike-card:hover {
+      transform: scale(1.05);
+    }
+
+    .bike-card img {
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      border: 1px solid #cc0000;
+    }
+
+    .bike-card h3 {
+      margin: 0 0 8px;
+      color: #cc0000;
+    }
+
+    .bike-card p {
+      margin: 4px 0;
+      color: #ddd;
+    }
+
+    footer {
+      background-color: #222;
+      text-align: center;
+      padding: 15px;
+      color: #888;
+      font-size: 0.9rem;
+      margin-top: auto;
+    }
+
+    /* Loader */
+    .loader {
+      border: 6px solid #444;
+      border-top: 6px solid #cc0000;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 40px auto;
+    }
+
+    @keyframes spin {
+      0% {transform: rotate(0);}
+      100% {transform: rotate(360deg);}
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Wristband Bike Dashboard</h1>
+</header>
+
+<div class="filter-buttons" id="filterButtons">
+  <button data-type="All" class="active">All</button>
+  <button data-type="Electric">Electric</button>
+  <button data-type="Mountain">Mountain</button>
+  <button data-type="Road">Road</button>
+</div>
+
+<main>
+  <div id="bikeGrid" class="bike-grid"></div>
+  <div id="loader" class="loader" style="display:none;"></div>
+</main>
+
+<footer>
+  &copy; 2025 SmartBike Tech
+</footer>
+
+<script>
+  const bikeGrid = document.getElementById('bikeGrid');
+  const filterButtons = document.getElementById('filterButtons');
+  const loader = document.getElementById('loader');
+
+  let bikesData = [];
+  let currentFilter = 'All';
+
+  // Mock API URL (you can replace with your real API endpoint)
+  // For demo, using a static JSON hosted on GitHub gist or a dummy API
+  // Here, we simulate an API with a local function instead of an actual URL
+
+  // Simulate fetching bike data from an API with some random updates
+  function fetchBikeData() {
+    return new Promise(resolve => {
+      // Simulated data with some random "status" to mimic real-time changes
+      const data = [
+        {
+          id: 1,
+          name: 'VoltEdge E-Bike',
+          type: 'Electric',
+          status: Math.random() > 0.8 ? 'Unavailable' : 'Available',
+          image: 'https://via.placeholder.com/240x140/cc0000/ffffff?text=Electric+Bike'
+        },
+        {
+          id: 2,
+          name: 'Mountain King X2',
+          type: 'Mountain',
+          status: Math.random() > 0.7 ? 'Unavailable' : 'Available',
+          image: 'https://via.placeholder.com/240x140/cc0000/ffffff?text=Mountain+Bike'
+        },
+        {
+          id: 3,
+          name: 'RoadMaster Pro',
+          type: 'Road',
+          status: 'Available',
+          image: 'https://via.placeholder.com/240x140/cc0000/ffffff?text=Road+Bike'
+        },
+        {
+          id: 4,
+          name: 'EcoRide 500',
+          type: 'Electric',
+          status: 'Available',
+          image: 'https://via.placeholder.com/240x140/cc0000/ffffff?text=Electric+Bike'
+        },
+        {
+          id: 5,
+          name: 'CliffCrusher MTB',
+          type: 'Mountain',
+          status: 'Available',
+          image: 'https://via.placeholder.com/240x140/cc0000/ffffff?text=Mountain+Bike'
+        },
+        {
+          id: 6,
+          name: 'Speedster R8',
+          type: 'Road',
+          status: Math.random() > 0.9 ? 'Unavailable' : 'Available',
+          image: 'https://via.placeholder.com/240x140/cc0000/ffffff?text=Road+Bike'
+        }
+      ];
+      // Simulate network delay
+      setTimeout(() => resolve(data), 800);
+    });
+  }
+
+  function renderBikes(bikes, filter = 'All') {
+    bikeGrid.innerHTML = '';
+    let filtered = filter === 'All' ? bikes : bikes.filter(b => b.type === filter);
+
+    if(filtered.length === 0){
+      bikeGrid.innerHTML = `<p style="text-align:center; color:#cc0000; font-weight:bold;">No bikes available for "${filter}"</p>`;
+      return;
+    }
+
+    filtered.forEach(bike => {
+      const card = document.createElement('div');
+      card.className = 'bike-card';
+
+      const statusColor = bike.status === 'Available' ? '#4caf50' : '#f44336'; // green or red
+
+      card.innerHTML = `
+        <img src="${bike.image}" alt="${bike.name}" />
+        <h3>${bike.name}</h3>
+        <p>Type: ${bike.type}</p>
+        <p>Status: <span style="color:${statusColor}; font-weight:bold;">${bike.status}</span></p>
+      `;
+      bikeGrid.appendChild(card);
+    });
+  }
+
+  function setActiveButton(type) {
+    [...filterButtons.children].forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === type);
+    });
+  }
+
+  // Initial data fetch and render
+  async function loadAndRender() {
+    loader.style.display = 'block';
+    try {
+      bikesData = await fetchBikeData();
+      renderBikes(bikesData, currentFilter);
+    } catch (error) {
+      bikeGrid.innerHTML = `<p style="color:#cc0000; text-align:center;">Failed to load bike data.</p>`;
+    }
+    loader.style.display = 'none';
+  }
+
+  // Filter button click handler
+  filterButtons.addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') {
+      currentFilter = e.target.dataset.type;
+      setActiveButton(currentFilter);
+      renderBikes(bikesData, currentFilter);
+    }
+  });
+
+  // Auto-refresh data every 10 seconds to simulate real-time
+  loadAndRender();
+  setInterval(loadAndRender, 10000);
+
+</script>
+
+</body>
+</html>
